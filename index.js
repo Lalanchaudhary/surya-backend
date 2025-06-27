@@ -1,42 +1,44 @@
 const express = require("express");
-const http = require("http"); // Import http module
-const { Server } = require("socket.io"); // Import socket.io
+const http = require("http");
+const { Server } = require("socket.io");
 const connectDB = require("./config/database");
 const cors = require("cors");
 require("dotenv").config();
 const cookieParser = require("cookie-parser");
 
-// Initialize Firebase Admin SDK (optional)
+// Firebase Admin SDK
 let admin = null;
 let firebaseInitialized = false;
-
 try {
   const serviceAccount = require('./config/firebase-service-account.json');
-  
-  // Check if service account has actual values (not placeholder)
   if (serviceAccount.project_id && serviceAccount.project_id !== 'your-firebase-project-id') {
     admin = require('firebase-admin');
     admin.initializeApp({
       credential: admin.credential.cert(serviceAccount),
     });
     firebaseInitialized = true;
-  } else {
-    // Firebase credentials not configured
   }
 } catch (error) {
-  // Firebase configuration not found
+  // Firebase config not found
 }
 
 const app = express();
-const server = http.createServer(app); // Create an HTTP server instance
+const server = http.createServer(app);
 
+// ✅ Socket.IO initialization
 const allowedOrigins = [
   'http://localhost:3000',
   'http://127.0.0.1:3000',
   'https://www.suryacake.in'
 ];
 
-// CORS configuration for cookies and credentials
+const io = new Server(server, {
+  cors: {
+    origin: allowedOrigins,
+    credentials: true
+  }
+});
+
 const corsOptions = {
   origin: function (origin, callback) {
     if (!origin || allowedOrigins.includes(origin)) {
@@ -54,7 +56,6 @@ app.use(cors(corsOptions));
 app.use(cookieParser());
 app.use(express.json());
 
-
 // Import routes
 const userRoutes = require("./routes/userRoutes");
 const paymentRoutes = require("./routes/paymentRoutes");
@@ -71,22 +72,19 @@ app.use("/admin", adminRoutes);
 app.use("/auth", authRoutes);
 app.use('/delivery', deliveryRoutes);
 
-// Base route
+// Root route
 app.get("/", (req, res) => {
   res.send("Welcome to eggless");
 });
 
-// Store connected users and their FCM tokens
+// Socket.IO logic
 const connectedUsers = new Map();
 const adminUsers = new Set();
 
-// Socket.IO logic
 io.on("connection", (socket) => {
-  // Handle admin connection
   socket.on("admin_connected", (data) => {
     socket.join("admin_room");
     adminUsers.add(socket.id);
-    
     if (data.userId && data.fcmToken) {
       connectedUsers.set(data.userId, {
         socketId: socket.id,
@@ -94,14 +92,11 @@ io.on("connection", (socket) => {
         role: 'admin'
       });
     }
-    
     socket.emit("admin_connected", { message: "Admin connected successfully" });
   });
 
-  // Handle user connection
   socket.on("user_connect", (data) => {
     socket.join("user_room");
-    
     if (data.userId && data.fcmToken) {
       connectedUsers.set(data.userId, {
         socketId: socket.id,
@@ -109,17 +104,14 @@ io.on("connection", (socket) => {
         role: 'user'
       });
     }
-    
     socket.emit("user_connected", { message: "User connected successfully" });
   });
 
-  // Handle joining admin room
-  socket.on("join_admin_room", (data) => {
+  socket.on("join_admin_room", () => {
     socket.join("admin_room");
     adminUsers.add(socket.id);
   });
 
-  // Handle joining specific admin room (NEW)
   socket.on("join_specific_admin_room", (data) => {
     if (data.adminId) {
       socket.join(`admin_${data.adminId}`);
@@ -127,25 +119,19 @@ io.on("connection", (socket) => {
     }
   });
 
-  // Handle leaving admin room
-  socket.on("leave_admin_room", (data) => {
+  socket.on("leave_admin_room", () => {
     socket.leave("admin_room");
     adminUsers.delete(socket.id);
   });
 
-  // Handle new order notification
   socket.on("new_order", (orderData) => {
-    // Emit to admin room
     io.to("admin_room").emit("new_order", orderData);
-    
-    // Send Firebase notification to all admin users (if Firebase is initialized)
     if (firebaseInitialized) {
       adminUsers.forEach(adminSocketId => {
         const adminSocket = io.sockets.sockets.get(adminSocketId);
         if (adminSocket) {
           const adminUserId = Array.from(connectedUsers.entries())
             .find(([userId, userData]) => userData.socketId === adminSocketId)?.[0];
-          
           if (adminUserId) {
             sendFirebaseNotification(adminUserId, {
               title: "🛍️ New Order Received!",
@@ -162,12 +148,8 @@ io.on("connection", (socket) => {
     }
   });
 
-  // Handle order status update
   socket.on("update_order_status", (data) => {
-    // Emit to admin room
     io.to("admin_room").emit("order_status_updated", data);
-    
-    // Send Firebase notification (if Firebase is initialized)
     if (firebaseInitialized && data.userId) {
       sendFirebaseNotification(data.userId, {
         title: "Order Status Updated",
@@ -182,12 +164,8 @@ io.on("connection", (socket) => {
     }
   });
 
-  // Handle order assignment
   socket.on("assign_order", (data) => {
-    // Emit to admin room
     io.to("admin_room").emit("order_assigned", data);
-    
-    // Send Firebase notification to delivery boy (if Firebase is initialized)
     if (firebaseInitialized && data.deliveryBoyId) {
       sendFirebaseNotification(data.deliveryBoyId, {
         title: "Order Assigned",
@@ -202,17 +180,12 @@ io.on("connection", (socket) => {
     }
   });
 
-  // Handle delivery boy status
   socket.on("delivery_boy_status", (data) => {
-    // Emit to admin room
     io.to("admin_room").emit("delivery_boy_status", data);
-    
-    // Send Firebase notification to admin (if Firebase is initialized)
     if (firebaseInitialized) {
       adminUsers.forEach(adminSocketId => {
         const adminUserId = Array.from(connectedUsers.entries())
           .find(([userId, userData]) => userData.socketId === adminSocketId)?.[0];
-        
         if (adminUserId) {
           sendFirebaseNotification(adminUserId, {
             title: "Delivery Boy Status",
@@ -230,29 +203,23 @@ io.on("connection", (socket) => {
     }
   });
 
-  // Handle sending notification to specific user
   socket.on("send_notification", (data) => {
     if (firebaseInitialized && data.userId && data.notification) {
       sendFirebaseNotification(data.userId, data.notification);
     }
   });
 
-  // Handle disconnection
   socket.on("disconnect", () => {
-    // Remove from connected users
     const disconnectedUserId = Array.from(connectedUsers.entries())
       .find(([userId, userData]) => userData.socketId === socket.id)?.[0];
-    
     if (disconnectedUserId) {
       connectedUsers.delete(disconnectedUserId);
     }
-    
-    // Remove from admin users
     adminUsers.delete(socket.id);
   });
 });
 
-// Firebase notification function (only works if Firebase is initialized)
+// Firebase Notification Function
 async function sendFirebaseNotification(userId, notificationData) {
   if (!firebaseInitialized || !admin) {
     console.log('⚠️ Firebase not initialized. Skipping notification.');
@@ -300,14 +267,14 @@ async function sendFirebaseNotification(userId, notificationData) {
   }
 }
 
-// Make io and admin available globally
+// Export globals
 global.io = io;
 global.admin = admin;
 global.connectedUsers = connectedUsers;
 global.sendFirebaseNotification = sendFirebaseNotification;
 global.firebaseInitialized = firebaseInitialized;
 
-// Start server
+// Server listen
 const port = process.env.PORT || 3000;
 server.listen(port, () => {
   console.log(`🚀 Server is running on port ${port}`);
@@ -319,5 +286,5 @@ server.listen(port, () => {
   }
 });
 
-// Connect to MongoDB
+// DB Connection
 connectDB();

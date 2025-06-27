@@ -11,6 +11,7 @@ const razorpay = new Razorpay({
   key_secret:'c62L38n5PxbRhgbLkEJjmY9U'
 });
 
+console.log("Hardcoded Razorpay initialized");
 // Create Razorpay order
 const paymentOrder = async (req, res) => {
   try {

@@ -44,15 +44,25 @@ app.use(cors(corsOptions));
 app.use(cookieParser());
 app.use(express.json());
 
+const allowedOrigins = [
+  'http://localhost:3000',
+  'https://www.suryacake.in'
+];
+
 const io = new Server(server, {
   cors: {
-    origin: process.env.NODE_ENV === 'production' 
-      ? process.env.FRONTEND_URL || 'http://localhost:3000'
-      : ['http://localhost:3000', 'http://127.0.0.1:3000'],
+    origin: (origin, callback) => {
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
     methods: ["GET", "POST"],
     credentials: true
   }
 });
+
 
 // Import routes
 const userRoutes = require("./routes/userRoutes");

@@ -72,20 +72,6 @@ exports.register = async (req, res) => {
       //   balance: 0,
       //   transactions: []
       // },
-      // settings: {
-      //   notifications: {
-      //     email: true,
-      //     sms: true,
-      //     push: true
-      //   },
-      //   privacy: {
-      //     profileVisibility: 'public',
-      //     showPhoneNumber: false
-      //   },
-      //   security: {
-      //     twoFactorAuth: false
-      //   }
-      // }
     });
 
     await user.save();

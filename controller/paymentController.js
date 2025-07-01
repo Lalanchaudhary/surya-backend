@@ -7,8 +7,8 @@ const { findNearestAdmin } = require('../lib/utils');
 require("dotenv").config();
 // Initialize Razorpay
 const razorpay = new Razorpay({
-  key_id:'rzp_test_1FGhUyAJx6vnYE',
-  key_secret:'c62L38n5PxbRhgbLkEJjmY9U'
+  key_id:'rzp_live_NY0ld00wkkG0bK',
+  key_secret:'aTYt5CkEL5WOYkjPf7RQHtc0'
 });
 
 console.log("Hardcoded Razorpay initialized");
@@ -118,7 +118,7 @@ const VerifyOrder = async (req, res) => {
     // Verify signature
     const body = razorpay_order_id + "|" + razorpay_payment_id;
     const expectedSignature = crypto
-      .createHmac('sha256', 'c62L38n5PxbRhgbLkEJjmY9U')
+      .createHmac('sha256', 'aTYt5CkEL5WOYkjPf7RQHtc0')
       .update(body.toString())
       .digest('hex');
 

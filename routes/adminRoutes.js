@@ -10,7 +10,7 @@ router.get('/admins', adminController.getAllAdmins);
 // FCM Token Management
 router.post('/update-fcm-token', adminController.updateFCMToken);
 // Protect all admin routes
-router.use(auth);
+router.use(protect);
 router.use(authorize('admin'));
 
 // Dashboard

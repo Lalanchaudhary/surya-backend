@@ -71,7 +71,7 @@ app.use("/cake", cakeRoutes);
 app.use("/admin", adminRoutes);
 app.use("/auth", authRoutes);
 app.use('/delivery', deliveryRoutes);
-app.use('/admin', addons);
+app.use('/adons', addons);
 // Root route
 app.get("/", (req, res) => {
   res.send("Welcome to eggless");

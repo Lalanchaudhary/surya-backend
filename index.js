@@ -63,7 +63,7 @@ const cakeRoutes = require("./routes/cakeRoutes");
 const adminRoutes = require("./routes/adminRoutes");
 const authRoutes = require("./routes/authRoutes");
 const deliveryRoutes = require('./routes/deliveryRoutes');
-
+const addons = require('./routes/Addons');
 // Routes
 app.use("/users", userRoutes);
 app.use("/payment", paymentRoutes);
@@ -71,7 +71,7 @@ app.use("/cake", cakeRoutes);
 app.use("/admin", adminRoutes);
 app.use("/auth", authRoutes);
 app.use('/delivery', deliveryRoutes);
-
+app.use('/admin', addons);
 // Root route
 app.get("/", (req, res) => {
   res.send("Welcome to eggless");

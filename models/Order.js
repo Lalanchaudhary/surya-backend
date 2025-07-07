@@ -122,6 +122,12 @@ const orderSchema = new mongoose.Schema({
   updatedAt: {
     type: Date,
     default: Date.now
+  },
+  deliveryDate: {
+    type: Date
+  },
+  deliveryTime: {
+    type: String
   }
 });
 

@@ -406,4 +406,39 @@ exports.cancelOrder = async (req, res) => {
   }
 };
 
+// Add or update the order creation function to support deliveryDate and deliveryTime
+// Example function (add this if not present):
+exports.createOrder = async (req, res) => {
+  try {
+    const {
+      items,
+      totalAmount,
+      paymentMethod,
+      shippingAddress,
+      orderInstructions,
+      deliveryInstructions,
+      estimatedDelivery,
+      deliveryDate,
+      deliveryTime
+    } = req.body;
+
+    const order = new Order({
+      user: req.user._id,
+      items,
+      totalAmount,
+      paymentMethod,
+      shippingAddress,
+      orderInstructions,
+      deliveryInstructions,
+      estimatedDelivery,
+      deliveryDate,
+      deliveryTime
+    });
+    await order.save();
+    res.status(201).json(order);
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+};
+
 

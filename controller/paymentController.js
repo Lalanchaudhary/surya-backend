@@ -20,7 +20,7 @@ const paymentOrder = async (req, res) => {
       return res.status(401).json({ message: 'Authentication required' });
     }
 
-    const {items, totalAmount, currency = 'INR', shippingAddress,orderInstruction, userId } = req.body;
+    const {items, totalAmount, currency = 'INR', shippingAddress, orderInstruction, orderInstructions, userId, tax, shippingcharge, deliveryDate, deliveryTime } = req.body;
 
     const totalAmountInt = parseInt(totalAmount);
     // Validate amount
@@ -56,9 +56,13 @@ const paymentOrder = async (req, res) => {
       paymentStatus: 'Pending',
       razorpayOrderId: order.id,
       shippingAddress,
-      orderInstructions:orderInstruction,
+      orderInstructions: orderInstructions || orderInstruction,
       items,
-      assignedToAdmin: assignedAdmin
+      assignedToAdmin: assignedAdmin,
+      ...(tax !== undefined && { tax }),
+      ...(shippingcharge !== undefined && { shippingcharge }),
+      ...(deliveryDate !== undefined && { deliveryDate }),
+      ...(deliveryTime !== undefined && { deliveryTime })
     });
     
 
@@ -178,7 +182,7 @@ const handleCODPayment = async (req, res) => {
       return res.status(401).json({ message: 'Authentication required' });
     }
 
-    const { items, shippingAddress, totalAmount ,orderInstruction } = req.body;
+    const { items, shippingAddress, totalAmount, orderInstruction, orderInstructions, tax, shippingcharge, deliveryDate, deliveryTime } = req.body;
 
     // Validate required fields
     if (!items || !shippingAddress || !totalAmount) {
@@ -211,7 +215,11 @@ const handleCODPayment = async (req, res) => {
       status: 'Pending',
       paymentStatus: 'Pending',
       assignedToAdmin: assignedAdmin,
-      orderInstructions:orderInstruction,
+      orderInstructions: orderInstructions || orderInstruction,
+      ...(tax !== undefined && { tax }),
+      ...(shippingcharge !== undefined && { shippingcharge }),
+      ...(deliveryDate !== undefined && { deliveryDate }),
+      ...(deliveryTime !== undefined && { deliveryTime })
     });
 
     await order.save();
@@ -278,7 +286,7 @@ const confirmCODPayment = async (req, res) => {
 const payWithWallet = async (req, res) => {
   try {
     const userId = req.user._id;
-    const { items, totalAmount, shippingAddress ,orderInstruction } = req.body;
+    const { items, totalAmount, shippingAddress, orderInstruction, orderInstructions, tax, shippingcharge, deliveryDate, deliveryTime } = req.body;
 
     if (!items || !totalAmount || !shippingAddress) {
       return res.status(400).json({ message: 'Incomplete order data' });
@@ -326,7 +334,11 @@ const payWithWallet = async (req, res) => {
       paymentStatus: 'Completed',
       status: 'Pending',
       assignedToAdmin: assignedAdmin,
-      orderInstructions:orderInstruction
+      orderInstructions: orderInstructions || orderInstruction,
+      ...(tax !== undefined && { tax }),
+      ...(shippingcharge !== undefined && { shippingcharge }),
+      ...(deliveryDate !== undefined && { deliveryDate }),
+      ...(deliveryTime !== undefined && { deliveryTime })
     });
 
     const savedOrder = await newOrder.save();

@@ -6,21 +6,36 @@ const cors = require("cors");
 require("dotenv").config();
 const cookieParser = require("cookie-parser");
 
-// Firebase Admin SDK
 let admin = null;
 let firebaseInitialized = false;
+
 try {
-  const serviceAccount = require('./config/firebase-service-account.json');
-  if (serviceAccount.project_id && serviceAccount.project_id !== 'your-firebase-project-id') {
-    admin = require('firebase-admin');
+  const firebaseConfig = process.env.FIREBASE_CONFIG;
+
+  if (!firebaseConfig) {
+    throw new Error("FIREBASE_CONFIG is missing from environment variables");
+  }
+
+  const parsedConfig = JSON.parse(firebaseConfig);
+  admin = require("firebase-admin");
+
+  if (!admin.apps.length) {
     admin.initializeApp({
-      credential: admin.credential.cert(serviceAccount),
+      credential: admin.credential.cert(parsedConfig),
     });
     firebaseInitialized = true;
+    console.log("✅ Firebase initialized from env");
+  } else {
+    firebaseInitialized = true;
+    console.log("ℹ️ Firebase already initialized");
   }
-} catch (error) {
-  // Firebase config not found
+
+  global.admin = admin;
+} catch (err) {
+  console.error("❌ Firebase config error:", err);
 }
+
+
 
 const app = express();
 const server = http.createServer(app);

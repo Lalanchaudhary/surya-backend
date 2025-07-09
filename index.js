@@ -6,20 +6,25 @@ const cors = require("cors");
 require("dotenv").config();
 const cookieParser = require("cookie-parser");
 
-// Firebase Admin SDK
+/// Initialize Firebase Admin SDK (optional)
 let admin = null;
 let firebaseInitialized = false;
+
 try {
   const serviceAccount = require('./config/firebase-service-account.json');
+  
+  // Check if service account has actual values (not placeholder)
   if (serviceAccount.project_id && serviceAccount.project_id !== 'your-firebase-project-id') {
     admin = require('firebase-admin');
     admin.initializeApp({
       credential: admin.credential.cert(serviceAccount),
     });
     firebaseInitialized = true;
+  } else {
+    // Firebase credentials not configured
   }
 } catch (error) {
-  // Firebase config not found
+  // Firebase configuration not found
 }
 
 const app = express();

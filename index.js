@@ -11,10 +11,10 @@ let admin = null;
 let firebaseInitialized = false;
 
 try {
-  const firebaseConfig = JSON.parse(process.env.FIREBASE_CREDENTIALS);
+  const serviceAccount = JSON.parse(process.env.FIREBASE_CREDENTIALS);
   
   // Check if service account has actual values (not placeholder)
-  if (serviceAccount.project_id && serviceAccount.project_id !== 'your-firebase-project-id') {
+  if (serviceAccount.project_id) {
     admin = require('firebase-admin');
     admin.initializeApp({
       credential: admin.credential.cert(serviceAccount),

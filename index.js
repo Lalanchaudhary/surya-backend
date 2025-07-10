@@ -11,7 +11,7 @@ let admin = null;
 let firebaseInitialized = false;
 
 try {
-  const serviceAccount = JSON.parse(process.env.FIREBASE_CREDENTIALS);
+  const serviceAccount = JSON.parse(process.env.FIREBASE_CONFIG);
   
   // Check if service account has actual values (not placeholder)
   if (serviceAccount.project_id) {
